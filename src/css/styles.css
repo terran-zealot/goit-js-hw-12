@@ -2,7 +2,7 @@
 
 
 .loader {
-    display: hidden;
+    display: none;
     text-align: center;
     font-size: 18px;
     margin: 20px auto;
@@ -13,11 +13,14 @@
 }
 
 .load-more-hidden {
-    display: visible;
+    display: none;
+    /* text-align: center;
+    font-size: 18px;
+    margin: 20px auto; */
 }
 
 .load-more {
-    display: hidden;
+    display: none;
     text-align: center;
     font-size: 18px;
     margin: 20px auto;
@@ -28,6 +31,7 @@
     padding: 8px;
     border-radius: 8px;
     background-color: white;
+    list-style: none;
 }
 
 .form {
