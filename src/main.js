@@ -86,9 +86,11 @@ function handleSubmit(event) {
 function onLoadMore() {
     page++;
     loadMore.disabled = true;
-
+    showLoader();
+    
     getImagesByQuery(userInput.value.trim(), page)
         .then(response => {
+            hideLoader();
             gallery.insertAdjacentHTML('beforeend', createGallery(response.data.hits));
             loadMore.disabled = false;
 
@@ -102,8 +104,6 @@ function onLoadMore() {
                     message: "You've reached the end of search results.",
                     position: "topRight"
                 });
-                // loadMore.insertAdjacentElement('afterend', "We're sorry, but you've reached the end of search results.")
-                // return; 
             }
             const cards = document.querySelectorAll(".gallery-item");
             if (cards.length === 0) return;
@@ -119,8 +119,10 @@ function onLoadMore() {
             }
         })
         .catch(error => {
+            hideLoader();
             loadMore.classList.remove("load-more");
             loadMore.classList.add("load-more-hidden");
+            loadMore.style.display = 'none';
             iziToast.error({
                 title: "Error",
                 message: "We're sorry, but you've reached the end of search results.",
