@@ -23,110 +23,120 @@ loadMore.addEventListener('click', onLoadMore);
 let page = 1;
 let lightbox = null;
 
-function handleSubmit(event) {
+const perPage = 15;
+let totalHits = 0;
+
+loader.style.display = 'none';
+
+function updateLoadMoreVisibility() {
+    const maxPages = Math.ceil(totalHits / perPage);
+    if (page >= maxPages) {
+        loadMore.style.display = 'none';
+        iziToast.info({
+            title: "End of Results",
+            message: "You've reached the end of search results.",
+            position: "topRight"
+        });
+    } else {
+        loadMore.style.display = 'block';
+    }
+}
+
+async function handleSubmit(event) {
     event.preventDefault();
     const query = userInput.value.trim();
-    if (!query) return;
+
+    if (!query) {
+        iziToast.warning({
+            title: "Empty Query",
+            message: "Please enter a search term!",
+            position: "topRight"
+        });
+        return;
+    }
 
     page = 1;
     clearGallery();
     showLoader();
 
-    getImagesByQuery(query, page)
-        .then(response => {
-            hideLoader();
+    try {
+        const response = await getImagesByQuery(query, page);
+        hideLoader();
 
-            if (!response.data.hits || response.data.hits.length === 0) {
-                iziToast.warning({
-                    title: "No Results",
-                    message: "No images found for your query. Try something else!",
-                    position: "topRight"
-                });
-                return;
-            }
-            
-            gallery.innerHTML = createGallery(response.data.hits);
-            loadMore.style.display = 'block';
-
-            const maxPages = Math.ceil(response.data.totalHits / 15);
-            if (page < maxPages) {  
-                loadMore.classList.remove("load-more-hidden");
-                loadMore.classList.add("load-more");
-            } else {  
-                loadMore.classList.remove("load-more");
-                loadMore.classList.add("load-more-hidden");
-
-                iziToast.info({
-                    title: "End of Results",
-                    message: "We're sorry, but you've reached the end of search results.",
-                    position: "topRight"
-                });
-            }
-
-            if (lightbox) {
-                 lightbox.refresh();
-            } else {
-                 lightbox = new SimpleLightbox('.gallery a', { captions: true, captionDelay: 250, close: true });
-            }
-        })
-        .catch(error => {
-            hideLoader();
-            console.error(error);
-            iziToast.error({
-                title: "Error",
-                message: "Sorry, something went wrong. Please try again!",
+        if (!response.data.hits || response.data.hits.length === 0) {
+            iziToast.warning({
+                title: "No Results",
+                message: "No images found for your query. Try something else!",
                 position: "topRight"
             });
+            loadMore.style.display = 'none';
+            return;
+        }
+
+        totalHits = response.data.totalHits;
+        gallery.innerHTML = createGallery(response.data.hits);
+        updateLoadMoreVisibility();
+
+        if (lightbox) {
+            lightbox.refresh();
+        } else {
+            lightbox = new SimpleLightbox('.gallery a', {
+                captions: true,
+                captionDelay: 250,
+                close: true
+            });
+        }
+
+    } catch (error) {
+        hideLoader();
+        loadMore.style.display = 'none';
+        iziToast.error({
+            title: "Error",
+            message: "Something went wrong. Please try again!",
+            position: "topRight"
         });
+        console.error(error);
+    }
 }
 
-
-
-
-function onLoadMore() {
+async function onLoadMore() {
     page++;
     loadMore.disabled = true;
     showLoader();
-    
-    getImagesByQuery(userInput.value.trim(), page)
-        .then(response => {
-            hideLoader();
-            gallery.insertAdjacentHTML('beforeend', createGallery(response.data.hits));
-            loadMore.disabled = false;
 
-            const maxPages = Math.ceil(response.data.totalHits / 15);
+    try {
+        const response = await getImagesByQuery(userInput.value.trim(), page);
+        hideLoader();
+        loadMore.disabled = false;
 
-            if (!response.data.hits || response.data.hits.length === 0 || page >= maxPages) {
-                loadMore.classList.remove("load-more");
-                loadMore.classList.add("load-more-hidden");
-                iziToast.info({
-                    title: "End of Results",
-                    message: "You've reached the end of search results.",
-                    position: "topRight"
-                });
-            }
-            const cards = document.querySelectorAll(".gallery-item");
-            if (cards.length === 0) return;
+        if (!response.data.hits || response.data.hits.length === 0) {
+            updateLoadMoreVisibility();
+            return;
+        }
+
+        gallery.insertAdjacentHTML('beforeend', createGallery(response.data.hits));
+        updateLoadMoreVisibility();
+
+        const cards = document.querySelectorAll(".gallery-item");
+        if (cards.length > 0) {
             const cardsHeight = cards[cards.length - 1].getBoundingClientRect().height;
             window.scrollBy({
                 left: 0,
                 top: cardsHeight * 2,
                 behavior: "smooth",
             });
+        }
 
-            if (lightbox) {
-                lightbox.refresh();
-            }
-        })
-        .catch(error => {
-            hideLoader();
-            loadMore.classList.remove("load-more");
-            loadMore.classList.add("load-more-hidden");
-            loadMore.style.display = 'none';
-            iziToast.error({
-                title: "Error",
-                message: "We're sorry, but you've reached the end of search results.",
-                position: "topRight"
-            });
+        if (lightbox) lightbox.refresh();
+
+    } catch (error) {
+        hideLoader();
+        loadMore.style.display = 'none';
+        iziToast.error({
+            title: "Error",
+            message: "Something went wrong during loading.",
+            position: "topRight"
         });
+        console.error(error);
+    }
 }
