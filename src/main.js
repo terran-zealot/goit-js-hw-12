@@ -13,10 +13,12 @@ import { getImagesByQuery } from "./js/pixabay-api.js";
 const form = document.querySelector(".form");
 const userInput = document.querySelector("input[name='search-text']");
 const gallery = document.querySelector(".gallery");
-document.querySelector('.loader').style.display = 'none';
-const loadMore = document.querySelector('.load-more')
-form.addEventListener("submit", handleSubmit);
+const loader = document.querySelector('.loader');
+const loadMore = document.querySelector('.load-more');
 
+if (loader) loader.style.display = 'none';
+
+form.addEventListener("submit", handleSubmit);
 loadMore.addEventListener('click', onLoadMore);
 
 
